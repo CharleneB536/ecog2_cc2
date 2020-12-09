@@ -165,7 +165,7 @@ head(taxa.print)
 
 
 ```{r}
-save.image(file = "02_stat-analysiscc2-with-DADA2_FinalENV")
+save.image(file = "cc2_data-analysis-with-DADA2_FinalENV")
 ```
 
 
