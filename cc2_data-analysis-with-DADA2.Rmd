@@ -148,6 +148,22 @@ rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
 
+```{bash}
+wget https://zenodo.org/record/3986799/files/silva_species_assignment_v138.fa.gz
+```
+```{r}
+library(dada2)
+library(ggplot2)
+taxa <- addSpecies(taxa, "~/ecog2_cc2/silva_species_assignment_v138.fa.gz")
+```
+
+```{r}
+taxa.print <- taxa # Removing sequence rownames for display only
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
+
+
 ```{r}
 save.image(file = "02_stat-analysiscc2-with-DADA2_FinalENV")
 ```
