@@ -163,4 +163,3 @@ rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
 
-
