@@ -2,11 +2,7 @@
 title: "R Notebook"
 output: html_notebook
 ---
-```{r}
-install.packages('BiocManager')
-library('BiocManager')
-BiocManager::install('phyloseq')
-```
+
 ```{r}
 library(phyloseq)
 library(ggplot2)
