@@ -1,17 +1,24 @@
 ---
 title: "Analyse des données avec DADA 2"
-output: html_document
+output:
+  pdf_document: default
+  html_notebook: default
 ---
-
+# Analyse des données avec DADA2
 
 ```{r}
 library(Rcpp)
 library(dada2)
 ```
+
+
+## Définition du chemin
+
 ```{r}
 path <- "~/ecog2_cc2/Data" # CHANGE ME to the directory containing the fastq files after unzipping.
 list.files(path)
 ```
+## Lecture des fichiers fastq et obtention des listes pour les reads forward et reverse
 
 ```{r}
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1.fastq and SAMPLENAME_R2.fastq
@@ -21,7 +28,7 @@ fnRs <- sort(list.files(path, pattern="_R2.fastq", full.names = TRUE))
 sample.names <- sapply(strsplit(basename(fnRs), "R"), '[', 1)
 ```
 
-## Inspection des profils qualité
+## Inspection des profils qualité des reads forward et reverse
 
 ```{r}
 plotQualityProfile(fnFs[1:2])
@@ -30,8 +37,12 @@ plotQualityProfile(fnFs[1:2])
 ```{r}
 plotQualityProfile(fnRs[1:2])
 ```
+On peut observer que les reads reverse présentent un score de qualité qui diminue plus fortement en fonction du nombre de cycles comparé aux reads forward. En effet, les reads reverse ont un Qscore d'environ 38 à 50 cycles et un Qscore de 28 à 250 cycles par exemple pour la Station 5 en septembre. Les reads reverse ont un Qscore qui se maintien égal ou supérieur à 30 en fonction du nombre de cycles.
+
 
 ## Filtrer et couper 
+
+On attribue des noms aux fichiers fastq filtrés.
 
 ```{r}
 # Place filtered files in filtered/ subdirectory
@@ -40,6 +51,8 @@ filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 ```
+
+Nous avons utilisé des paramètres pour filtrer les données. Le paramètre trimLeft = 21 de la fonction FilterAndTrim pour éliminer automatiquement les primers des reads forward et reverse par exemple. Les amorces des reads forward et reverse ont été tronquées aux nucléotides 240 et 200 respectivement avec le paramètre truncLen=c(240,200).
 
 ```{r}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs,trimLeft = 21,truncLen=c(240,200), 
@@ -50,18 +63,25 @@ head(out)
 
 ## Apprentissage des erreurs
 
+Dada2 va calculer un modèle d'erreur à partir des données de séquençage. On applique cette méthode sur les read forward puis reverse 
+
 ```{r}
 errF <- learnErrors(filtFs, multithread=TRUE)
 ```
 ```{r}
 errR <- learnErrors(filtRs, multithread=TRUE)
 ```
+Pour ce modèle d'erreur 3 et 4 échantillons ont été utilisés pour les reads forward et reverse, respectivement.
 
 ```{r}
 plotErrors(errF, nominalQ=TRUE)
 ```
 
-## Inférence
+La probabilité d'une erreur de séquençage en fonction du Qscore de la position considérée est représentée (via la fonction plotErrors()). La probabilité est maximale pour la position A2A par exemple. Quand on a un trait qui est représenté pour un score de qualité élevé, cela signifie qu'il y a une faible probabilité que un A donne un C. Quand on a un score de qualité plutôt faible (Q10 par exemple) la probabilité qu'un A donne un C est plus élevée. 
+
+## Inférence d'échantillon
+
+On crée deux nouvelles variables dadaFs et dadaRs qui recoivent le résultat de dada, c'est-à-dire le modèle d'erreur pour corriger les données.
 
 ```{r}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
@@ -74,8 +94,12 @@ dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
 ```{r}
 dadaFs[[1]]
 ```
+On peut constater qu'il y a eu 1019 variantes de séquences qui ont été déduites à partir de 37907 séquences dans le premier échantillon du read forward. 
 
-## Assembler les reads en un contig
+
+## Alignement des Read1 et des Read2 en un contig
+
+On a un amplicon de la partie V4 de l'ARN 16S avec des primers et on obtient des fragments de 250 paires de bases. Le Read 1 fait 240 paires de bases et le Read 2 fait 160 paires de bases. Donc, il y a un chevauchement entre les deux séquences. On peut ainsi aligner les deux Read et former un contig.
 
 ```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
@@ -88,26 +112,36 @@ head(mergers[[1]])
 
 ## Construction d'une table d'observation
 
+En partant de l'abondance de chacune des séquences dans chacun des échantillons, on va construire une table d'observation et on crée un objet seqtab avec en ligne le nom des échantillons et en colonne les séquences. A l'intérieur on aura le nombre de fois où l'on observe l'échantillon.
 
 ```{r}
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 ```
 
+Ensuite, on va regarder la distribution des longueurs de séquences
+
 ```{r}
 # Inspect distribution of sequence lengths
 table(nchar(getSequences(seqtab)))
 ```
+On peut voir qu'il y a beaucoup de séquences entre 369 et 373 nucléotides et constater que la taille de ces séquences est assez homogène. 
 
 ## Eliminer les chimères
+
+Au cours de l'amplification de l'ADN il y a eu formation de chimères qui doivent être suprimées.
 
 ```{r}
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 ```
 
+On peut constater qu'il y a un grand nombre de chimères présentes. Sur les 19943 séquences uniques, il a été identifié 18365 chimères, soit 4/5. Chaque séquence unique peut tout de même être présente en plusieurs fois.
+
 ```{r}
 dim(seqtab.nochim)
 ```
+
+On peut calculer le ratio entre le nombre de chimères et l'ensemble des abondances relatives des séquences dans les échantillons :
 
 ```{r}
 sum(seqtab.nochim)/sum(seqtab)
@@ -118,8 +152,11 @@ sum(seqtab.nochim)/sum(seqtab)
 ```
 On regarde ici le pourcentage de séquences de chimères qui ont été enlevées. On voit qu'il y a 22 % des échantillons de notre jeu de données qui étaient considérées comme des chimères et qui ont été supprimées.
 
+Il faut faire attention que les séquences utilisées ne contiennent plus les primers car ces derniers pourront être considérés comme chimères.
 
-## Track reads through the pipeline
+## Suivre les reads dans le pipeline (résumé des filtres qualité)
+
+La variable getN prend la forme d'une fonction. La fonction cbind permet la concaténation.
 
 ```{r}
 getN <- function(x) sum(getUniques(x))
@@ -130,14 +167,17 @@ rownames(track) <- sample.names
 head(track)
 ```
 
+On peut voir l'évolution du nombre de séquences à chaque itération. Par exemple pour la Station 5 (Fond 1, 10 septembre 2014) on part de 159971 paires de read à 117203 paires de contigs.
+
 ## Assignation d'une taxonomie
 
-
+Il faut réaliser un algorithme d'assignation et utiliser une base de données de référence (Silva).
 
 ```{bash}
 wget https://zenodo.org/record/3986799/files/silva_nr99_v138_train_set.fa.gz
 ```
 
+L'assignation va aller jusqu'à un seuil prédéfini.
 
 ```{r}
 taxa <- assignTaxonomy(seqtab.nochim, "~/ecog2_cc2/silva_nr99_v138_train_set.fa.gz", multithread=TRUE)
@@ -148,8 +188,10 @@ taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
 head(taxa.print)
 ```
+L'assignement taxonomique a été réalisé en utilisant la base de données de référence Silva. Ainsi, on peut observer les différents phylas, classes, ordres, familles et espèces présents dans les échantillons.
 
-
-
+```{r}
+save.image(file= "cc2_data-analysis-with-DADA2.Rmd")
+```
 
 
