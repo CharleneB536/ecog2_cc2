@@ -5,12 +5,18 @@ output: html_notebook
 
 # Analyse des données de la rade de Brest avec Phyloseq
 
+```{r}
+load("cc2_data-analysis-with-DADA2")
+```
+
 ## Appel des packages
 
 ```{r}
 library(phyloseq)
 library(ggplot2)
 ```
+
+## Construction d'un échantillon data.frame à partir des données
 
 ```{r}
 samples.out <- rownames(seqtab.nochim)
@@ -21,14 +27,19 @@ samdf$Profondeur[samdf$Date>11] <- c("Fond","Median","Surface")
 samdf$Date[samdf$Profondeur>11] <- c("mars","sept")
 rownames(samdf) <- samples.out
 ```
+## Création d'un fichier csv afin d'ordonner les paramètres (mois, profondeur)
 
 ```{r}
 write.csv(samdf,"samdf.csv")
 ```
 
+## Création de l'objet samdf
+
 ```{r}
 samdf <-read.table('~/ecog2_cc2/samdf.csv', sep=',', header=TRUE, row.names=1)
 ```
+
+On importe notre jeu de métadonnées que l'on a construit précédement dans l'objet samdf. Ce fichier regroupe les différentes informations sur les échantillons, ce qui va permettre de les discriminer au niveau de la date et de la profondeur d'échantillonnage. 
 
 ```{r}
 ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
@@ -36,20 +47,28 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
                tax_table(taxa))
 ps
 ```
+Ensuite, on regroupe dans un objet ps l'ensemble des objets précédents (taxtab,samdf et seqtab) afin de pouvoir réaliser l'assignation taxonomique de chaque séquence du jeu de données. 
+On peut voir les 1578 taxons sont répartis en 11 échantillons et parmi ces échantillons il y a 2 variables.
+
+## Indices d'alpha diversité
 
 ```{r}
 plot_richness(ps, x="Date", measures=c("Shannon", "Simpson"), color="Profondeur",)
 ```
+L'indice de Shannon va donner des informations sur la structure et la richesse d'une communauté. L'indice de Simpson prend également en compte la richesse et la régularité. On peut en conclure que pour la période de mars l'alpha diversité est importante pour le fond et la surface c'est-à-dire que les communautés sont diversifiées. En septembre, il semble y avoir une corrélation entre la profondeur et la richesse. En effet on peut voir que les communautés bactériennes sont beaucoup plus diversifiées dans les fonds comparé à la surface. 
 
 ## Filtration de taxonomie
 
 ```{r}
 rank_names(ps)
 ```
+L’objet ps possède comme paramètres : “Kingdom” “Phylum” “Class” “Order” “Family” “Genus” “Species”
+
 
 ```{r}
 table(tax_table(ps)[, "Phylum"], exclude = NULL)
 ```
+Ce tableau représente les phylla et leur abondances de l'objet ps. On peut constater que les Proteobacteria (799) sont les plus abondantes suivis des Bacteroidota (239).
 
 ```{r}
 ps <- subset_taxa(ps, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
