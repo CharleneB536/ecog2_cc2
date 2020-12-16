@@ -6,18 +6,107 @@ output: html_notebook
 ```{r}
 library(phyloseq)
 library(ggplot2)
-theme_set(theme_bw())
 ```
 
 ```{r}
 samples.out <- rownames(seqtab.nochim)
-subject <- sapply(strsplit(samples.out, "D"), `[`, 1)
-gender <- substr(subject,1,1)
-subject <- substr(subject,2,999)
-day <- as.integer(sapply(strsplit(samples.out, "D"), `[`, 2))
-samdf <- data.frame(Subject=subject, Gender=gender, Day=day)
-samdf$When <- "Early"
-samdf$When[samdf$Day>100] <- "Late"
+profondeur <- sapply(strsplit(samples.out, "D"), `[`, 1)
+date <- substr(profondeur,0,11)
+samdf <- data.frame(Profondeur=profondeur, Date=date)
+samdf$Profondeur[samdf$Date>11] <- c("Fond","Median","Surface")
+samdf$Date[samdf$Profondeur>11] <- c("mars","sept")
 rownames(samdf) <- samples.out
 ```
+
+```{r}
+write.csv(samdf,"samdf.csv")
+```
+
+```{r}
+samdf <-read.table('~/ecog2_cc2/samdf.csv', sep=',', header=TRUE, row.names=1)
+```
+
+```{r}
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa))
+ps
+```
+
+```{r}
+plot_richness(ps, x="Date", measures=c("Shannon", "Simpson"), color="Profondeur",)
+```
+
+## Filtration de taxonomie
+
+```{r}
+rank_names(ps)
+```
+
+```{r}
+table(tax_table(ps)[, "Phylum"], exclude = NULL)
+```
+
+```{r}
+ps <- subset_taxa(ps, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
+```
+
+```{r}
+# Compute prevalence of each feature, store as data.frame
+prevdf = apply(X = otu_table(ps),
+               MARGIN = ifelse(taxa_are_rows(ps), yes = 1, no = 2),
+               FUN = function(x){sum(x > 0)})
+# Add taxonomy and total read counts to this data.frame
+prevdf = data.frame(Prevalence = prevdf,
+                    TotalAbundance = taxa_sums(ps),
+                    tax_table(ps))
+```
+
+```{r}
+plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
+```
+
+Estimation des abondances mais ont est pas sur par exemple Bacteroidota est bcp abondante
+
+```{r}
+# Subset to the remaining phyla
+prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(ps, "Phylum"))
+ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(ps),color=Phylum)) +
+  # Include a guess for parameter
+  geom_hline(yintercept = 0.05, alpha = 0.5, linetype = 2) +  geom_point(size = 2, alpha = 0.7) +
+  scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
+  facet_wrap(~Phylum) + theme(legend.position="none")
+```
+
+```{r}
+pslog <- transform_sample_counts(ps, function(x) log(1 + x))
+out.wuf.log <- ordinate(pslog, method = "PCoA", distance = "bray")
+```
+
+```{r}
+evals <- out.wuf.log$values$Eigenvalues
+plot_ordination(pslog, out.wuf.log, color = "Profondeur", shape="Date") +
+  labs(col = "Profondeur",shape= "Date")
+```
+
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Date", fill="Genus") + facet_wrap(~Profondeur, scales="free_x")
+```
+
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Date", fill="Family") + facet_wrap(~Profondeur, scales="free_x")
+```
+
+
+Biomarqueur = Genre et pas des paramètres physiques
+
+
 
