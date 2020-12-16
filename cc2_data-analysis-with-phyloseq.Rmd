@@ -3,6 +3,10 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+# Analyse des données de la rade de Brest avec Phyloseq
+
+## Appel des packages
+
 ```{r}
 library(phyloseq)
 library(ggplot2)
