@@ -191,7 +191,7 @@ head(taxa.print)
 L'assignement taxonomique a été réalisé en utilisant la base de données de référence Silva. Ainsi, on peut observer les différents phylas, classes, ordres, familles et espèces présents dans les échantillons.
 
 ```{r}
-save.image(file= "cc2_data-analysis-with-DADA2.Rmd")
+load("cc2_data-analysis-with-DADA2")
 ```
 
 
