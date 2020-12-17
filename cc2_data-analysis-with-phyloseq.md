@@ -4,7 +4,6 @@ output:
   html_document: default
 ---
 R Notebook
-
 ================
 
   - [Analyse des données de la rade de Brest avec
