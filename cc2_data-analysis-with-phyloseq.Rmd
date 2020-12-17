@@ -62,17 +62,19 @@ L'indice de Shannon va donner des informations sur la structure et la richesse d
 ```{r}
 rank_names(ps)
 ```
-L’objet ps possède comme paramètres : “Kingdom” “Phylum” “Class” “Order” “Family” “Genus” “Species”
+L’objet ps possède comme paramètres : “Kingdom” “Phylum” “Class” “Order” “Family” “Genus”.
 
 
 ```{r}
 table(tax_table(ps)[, "Phylum"], exclude = NULL)
 ```
-Ce tableau représente les phylla et leur abondances de l'objet ps. On peut constater que les Proteobacteria (799) sont les plus abondantes suivis des Bacteroidota (239).
+Ce tableau représente les différents phylas et leur abondances de l'objet ps. On peut constater que les Proteobacteria (799) sont les plus abondantes suivis des Bacteroidota (239) et des Cyanobacteria (142).
 
 ```{r}
 ps <- subset_taxa(ps, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
 ```
+
+Dans l'objet ps on va filter tous les phylas qui ne sont pas caractérisés (NA).
 
 ```{r}
 # Compute prevalence of each feature, store as data.frame
@@ -85,11 +87,12 @@ prevdf = data.frame(Prevalence = prevdf,
                     tax_table(ps))
 ```
 
+Nous avons estimé la prévalence des taxons ainsi que le filtrage qualité (le nombre d'échantillons dans lequel un taxa apparaît au moins une fois). Tout ceci sera placé dans un data.frame, puis l'annotation taxonomique et le nombre total de reads sont ajoutés.
+
 ```{r}
 plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
 ```
-
-Estimation des abondances mais ont est pas sur par exemple Bacteroidota est bcp abondante
+Dans ce tableau, on peut observer l'estimation des abondances de chaque phylas. Cela confirme les résultats précédents.
 
 ```{r}
 # Subset to the remaining phyla
@@ -100,6 +103,13 @@ ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(ps),color=Phylum)) +
   scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
   facet_wrap(~Phylum) + theme(legend.position="none")
 ```
+
+Ces graphiques représentent la prévalence de chaque phyla en fonction de l'abondance totale des phylas. Comme constaté précédemment, les Proteobacteria, les Bacteroidota et les Cyanobacteria sont les phylas les plus abondants. 
+
+Toutefois ces résultats ne montrent pas l'abondance des différents phylas en fonction de la saison (mars ou septembre) et de la profondeur d'échantillonnage.
+
+Par la suite, nous allons réaliser une pCoA afin avec la distance de Bray-Curtis qui permet d'évaluer la dissimilarité entre les taxons sur deux paramètres qui sont la date et la profondeur d'échantillonnage. 
+
 
 ```{r}
 pslog <- transform_sample_counts(ps, function(x) log(1 + x))
@@ -112,6 +122,7 @@ plot_ordination(pslog, out.wuf.log, color = "Profondeur", shape="Date") +
   labs(col = "Profondeur",shape= "Date")
 ```
 
+Sur ce graphique représentant la pCoA, les saisons sont représentées en triangles (septembre, été) et en rond (mars, hiver). La profondeur d'échantillonnage est représentée par trois couleurs : surface (bleu), median (vert) et fond (rouge).   
 
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
