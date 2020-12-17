@@ -5,6 +5,12 @@ output: html_notebook
 
 # Analyse des données de la rade de Brest avec Phyloseq
 
+Questions :
+
+1/ quelles sont les influences relatives de la profondeur et de la saison sur la structure des communautes planctoniques de la rade de Brest
+
+2/ Quels sont les biomarqueurs de saison (hiver et ete) ? 
+
 ```{r}
 load("cc2_data-analysis-with-DADA2")
 ```
@@ -55,7 +61,9 @@ On peut voir les 1578 taxons sont répartis en 11 échantillons et parmi ces éc
 ```{r}
 plot_richness(ps, x="Date", measures=c("Shannon", "Simpson"), color="Profondeur",)
 ```
-L'indice de Shannon va donner des informations sur la structure et la richesse d'une communauté. L'indice de Simpson prend également en compte la richesse et la régularité. On peut en conclure que pour la période de mars l'alpha diversité est importante pour le fond et la surface c'est-à-dire que les communautés sont diversifiées. En septembre, il semble y avoir une corrélation entre la profondeur et la richesse. En effet on peut voir que les communautés bactériennes sont beaucoup plus diversifiées dans les fonds comparé à la surface. 
+L'indice de Shannon va donner des informations sur la structure et la richesse d'une communauté. L'indice de Simpson prend également en compte la richesse et la régularité. 
+
+On peut en conclure que pour la période de mars l'alpha diversité est importante pour le fond et la surface c'est-à-dire que les communautés sont diversifiées. En septembre, il semble y avoir une corrélation entre la profondeur et la richesse. En effet on peut voir que les communautés bactériennes sont beaucoup plus diversifiées dans les fonds comparé à la surface. 
 
 ## Filtration de taxonomie
 
@@ -68,7 +76,7 @@ L’objet ps possède comme paramètres : “Kingdom” “Phylum” “Class”
 ```{r}
 table(tax_table(ps)[, "Phylum"], exclude = NULL)
 ```
-Ce tableau représente les différents phylas et leur abondances de l'objet ps. On peut constater que les Proteobacteria (799) sont les plus abondantes suivis des Bacteroidota (239) et des Cyanobacteria (142).
+Ce tableau représente les différents phylas et leur abondances de l'objet ps. On peut constater que les Proteobacteria (798) sont les plus abondantes suivis des Bacteroidota (239) et des Cyanobacteria (142).
 
 ```{r}
 ps <- subset_taxa(ps, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
@@ -123,15 +131,15 @@ plot_ordination(pslog, out.wuf.log, color = "Profondeur", shape="Date") +
   labs(col = "Profondeur",shape= "Date")
 ```
 
-Sur ce graphique représentant la pCoA, les saisons sont représentées en triangles (septembre, été) et en rond (mars, hiver). La profondeur d'échantillonnage est représentée par trois couleurs : surface (bleu), median (vert) et fond (rouge). Les axes représentent les variances, traduisant la dispersion de la population au sein des échantillons. L'axe 1 traduit la distribution de la population entre les deux saisons et l'axe 2 traduit la distribution de la population au sein de la même saison en fonction de la profondeur d'échantillonnage. Tout d'abord, on peut voir que la distribution des saisons est bien séparée, ce qui suppose une différence des populations entre ces deux périodes de l'année. De plus, au sein de la même saison, l'été (en septembre), on peut voir au niveau de la répartition de la profondeur d'échantillonnage que l'échantillonnage au fond est bien à part comparé à l'échantillonnage à la surface et en médian. Ainsi, la population est différente également entre les niveaux de profondeur d'échantillonnage mais de façon moindre comparé aux populations entre les deux saisons. En hiver (mars), on peut voir que les populations sont similaires, même quand la profondeur d'échantillonnage est modifiée. 
+Sur ce graphique représentant la pCoA, les saisons sont représentées en triangles (septembre, été) et en rond (mars, hiver). La profondeur d'échantillonnage est représentée par trois couleurs : surface (bleu), median (vert) et fond (rouge). Les axes représentent les variances, traduisant la dispersion de la population au sein des échantillons. L'axe 1 traduit la distribution de la population entre les deux saisons et l'axe 2 traduit la distribution de la population au sein de la même saison en fonction de la profondeur d'échantillonnage. 
 
-```{r}
-top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
-plot_bar(ps.top20, x="Date", fill="Genus") + facet_wrap(~Profondeur, scales="free_x")
-```
+Tout d'abord, on peut voir que la distribution des saisons est bien séparée, ce qui suppose une différence des populations entre ces deux périodes de l'année. De plus, au sein de la même saison, l'été (en septembre), on peut voir au niveau de la répartition de la profondeur d'échantillonnage que l'échantillonnage au fond est bien à part comparé à l'échantillonnage à la surface et en médian. Ainsi, la population est différente également entre les niveaux de profondeur d'échantillonnage mais de façon moindre comparé aux populations entre les deux saisons. En hiver (mars), on peut voir que les populations sont similaires, même quand la profondeur d'échantillonnage est modifiée. 
 
+On peut conclure qu'il n'y a pas de cohabitation entre les communautés bactériennes en septembre et en mars. On peut également dire que la saison influe de façon plus importante sur la structure de la communauté bactérienne par rapport à la profondeur d'échantillonnage qui influe, mais de façon moindre.
+
+## Histogrammes des abondances
+
+### Histogramme des abondances des familles de communautés bactériennes
 
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
@@ -140,8 +148,31 @@ ps.top20 <- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x="Date", fill="Family") + facet_wrap(~Profondeur, scales="free_x")
 ```
 
+Cet histogramme représente les abondances des familles bactériennes (avec différentes couleurs) en fonction de la date et de la profondeur d'échantillonnage. 
 
-Biomarqueur = Genre et pas des paramètres physiques
+On peut constater que la famille de la Clade I prédomine dans les différentes conditions (dates et profondeurs d'échantillonnage). De plus, la famille des Cyanobiaceae sont aussi présentes en forte abondance pour les profondeurs d'échantillonnage median et surface en septembre. 
+
+On peut en conclure que la profondeur d'échantillonnage et la saison influent sur la diversité, la structure et l'abondance bactérienne. En effet, l'abondance totale de la communauté bactérienne est à chaque fois moindre en période hivernale (mars) pour chaque profondeur d'échantillonnage.
+
+
+### Histogramme des abondances des genres bactériens
+
+```{r}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Date", fill="Genus") + facet_wrap(~Profondeur, scales="free_x")
+```
+
+Cet histogramme représente les abondances des genres bactériens (avec différentes couleurs) en fonction de la date et de la profondeur d'échantillonnage. Cela va permettre de préciser le type de biomarqueur qui pourra être utilisé.
+
+On peut constater que le genre Clade Ia prédomine dans toutes les conditions à l'exception de la profondeur d'échantillonnage en surface en septembre. De plus, à la profondeur d'échantillonnage en surface en septembre, on peut constater que le genre Synechococcus CC9902 est le plus abondant parmi la communauté.
+
+On peut en conclure comme précédemment que la saison et la profondeur d'échantillonnage influent sur la diversité, la structure et l'abondance bactérienne. 
+
+Enfin, on peut dire que le genre Synechococcus CC9902 pourrait être utilisé comme biomarqueurs pour la saison estivale à des conditions de profondeurs d'échantillonnage en médian et en surface. On ne peut pas conclure sur l'utilisation d'un biomarqueur pour la période hivernale puisque aucun genre bactérien ne se démarque en cette période. 
+
+
 
 
 
