@@ -92,10 +92,9 @@ Nous avons estimé la prévalence des taxons ainsi que le filtrage qualité (le 
 ```{r}
 plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
 ```
-Dans ce tableau, on peut observer l'estimation des abondances de chaque phylas. Cela confirme les résultats précédents.
+Dans ce tableau, on peut observer l'estimation des abondances de chaque phylas. Cela confirme les résultats précédents : Proteobacteria, Bacteroidota et Cyanobacteria sont les phylas les plus abondants. La fonction plyr permet de séparer l'abondance des phylas.
 
 ```{r}
-# Subset to the remaining phyla
 prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(ps, "Phylum"))
 ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(ps),color=Phylum)) +
   # Include a guess for parameter
@@ -116,13 +115,15 @@ pslog <- transform_sample_counts(ps, function(x) log(1 + x))
 out.wuf.log <- ordinate(pslog, method = "PCoA", distance = "bray")
 ```
 
+La fonction TransformSampleCount permet de transformer le nombre d’échantillons d’une matrice d’abondance de taxons avec une fonction fournie par l’utilisateur. Les comptages de chaque échantillon seront transformés individuellement. Aucune interaction/comparaison échantillon-échantillon n’est possible par cette méthode.
+
 ```{r}
 evals <- out.wuf.log$values$Eigenvalues
 plot_ordination(pslog, out.wuf.log, color = "Profondeur", shape="Date") +
   labs(col = "Profondeur",shape= "Date")
 ```
 
-Sur ce graphique représentant la pCoA, les saisons sont représentées en triangles (septembre, été) et en rond (mars, hiver). La profondeur d'échantillonnage est représentée par trois couleurs : surface (bleu), median (vert) et fond (rouge).   
+Sur ce graphique représentant la pCoA, les saisons sont représentées en triangles (septembre, été) et en rond (mars, hiver). La profondeur d'échantillonnage est représentée par trois couleurs : surface (bleu), median (vert) et fond (rouge). Les axes représentent les variances, traduisant la dispersion de la population au sein des échantillons. L'axe 1 traduit la distribution de la population entre les deux saisons et l'axe 2 traduit la distribution de la population au sein de la même saison en fonction de la profondeur d'échantillonnage. Tout d'abord, on peut voir que la distribution des saisons est bien séparée, ce qui suppose une différence des populations entre ces deux périodes de l'année. De plus, au sein de la même saison, l'été (en septembre), on peut voir au niveau de la répartition de la profondeur d'échantillonnage que l'échantillonnage au fond est bien à part comparé à l'échantillonnage à la surface et en médian. Ainsi, la population est différente également entre les niveaux de profondeur d'échantillonnage mais de façon moindre comparé aux populations entre les deux saisons. En hiver (mars), on peut voir que les populations sont similaires, même quand la profondeur d'échantillonnage est modifiée. 
 
 ```{r}
 top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
