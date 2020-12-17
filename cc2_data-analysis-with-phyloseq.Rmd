@@ -1,15 +1,17 @@
 ---
-title: "R Notebook"
-output: html_notebook
----
+title: "Charlène Boulet"
+output: 
+  pdf_document: default
+  html_notebook: default
 
+---
 # Analyse des données de la rade de Brest avec Phyloseq
 
 Questions :
 
-1/ quelles sont les influences relatives de la profondeur et de la saison sur la structure des communautes planctoniques de la rade de Brest
+1/ quelles sont les influences relatives de la profondeur et de la saison sur la structure des communautés planctoniques de la rade de Brest
 
-2/ Quels sont les biomarqueurs de saison (hiver et ete) ? 
+2/ Quels sont les biomarqueurs de saison (hiver et été) ? 
 
 ```{r}
 load("cc2_data-analysis-with-DADA2")
@@ -33,6 +35,7 @@ samdf$Profondeur[samdf$Date>11] <- c("Fond","Median","Surface")
 samdf$Date[samdf$Profondeur>11] <- c("mars","sept")
 rownames(samdf) <- samples.out
 ```
+
 ## Création d'un fichier csv afin d'ordonner les paramètres (mois, profondeur)
 
 ```{r}
