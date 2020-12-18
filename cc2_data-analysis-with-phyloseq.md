@@ -3,9 +3,9 @@ Analyse des données de la rade de Brest avec Phyloseq
 
 Questions :
 
-1/ quelles sont les influences relatives de la profondeur et de la
+1/ Quelles sont les influences relatives de la profondeur et de la
 saison sur la structure des communautés planctoniques de la rade de
-Brest
+Brest ?
 
 2/ Quels sont les biomarqueurs de saison (hiver et été) ?
 
@@ -36,8 +36,8 @@ Construction d’un échantillon data.frame à partir des données
 
     rownames(samdf) <- samples.out
 
-Création d’un fichier csv afin d’ordonner les paramètres (mois, profondeur) avec write.csv
-------------------------------------------------------------------------------------------
+Création d’un fichier csv afin d’ordonner les paramètres (mois, profondeur)
+---------------------------------------------------------------------------
 
 write.csv(samdf,“samdf.csv”)
 
@@ -76,14 +76,16 @@ Indices d’alpha diversité
 
 L’indice de Shannon va donner des informations sur la structure et la
 richesse d’une communauté. L’indice de Simpson prend également en compte
-la richesse et la régularité.
+la richesse et la régularité. Plus ces indices sont importants, plus la
+communauté est riche et diversifiée.
 
 On peut en conclure que pour la période de mars l’alpha diversité est
 importante pour le fond et la surface c’est-à-dire que les communautés
 sont diversifiées. En septembre, il semble y avoir une corrélation entre
 la profondeur et la richesse. En effet on peut voir que les communautés
 bactériennes sont beaucoup plus diversifiées dans les fonds comparé à la
-surface.
+surface. De plus, la population retrouvée en septembre à la surface est
+plus rare.
 
 Filtration de taxonomie
 -----------------------
@@ -126,7 +128,7 @@ L’objet ps possède comme paramètres : “Kingdom” “Phylum” “Class”
     ##                            72                            11
 
 Ce tableau représente les différents phylas et leur abondances de
-l’objet ps. On peut constater que les Proteobacteria (798) sont les plus
+l’objet ps. On peut constater que les Proteobacteria (799) sont les plus
 abondantes suivis des Bacteroidota (239) et des Cyanobacteria (142).
 
     ps <- subset_taxa(ps, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
@@ -145,8 +147,9 @@ caractérisés (NA).
 
 Nous avons estimé la prévalence des taxons ainsi que le filtrage qualité
 (le nombre d’échantillons dans lequel un taxa apparaît au moins une
-fois). Tout ceci sera placé dans un data.frame, puis l’annotation
-taxonomique et le nombre total de reads sont ajoutés.
+fois). Tout ceci sera mis dans une base de données grâce à la fonction
+data.frame, puis l’annotation taxonomique et le nombre total de reads
+sont ajoutés.
 
     plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
 
@@ -198,9 +201,9 @@ les plus abondants.
 
 Toutefois ces résultats ne montrent pas l’abondance des différents
 phylas en fonction de la saison (mars ou septembre) et de la profondeur
-d’échantillonnage.
+d’échantillonnage (surface, médian, fond).
 
-Par la suite, nous allons réaliser une pCoA afin avec la distance de
+Par la suite, nous allons réaliser une pCoA avec la distance de
 Bray-Curtis qui permet d’évaluer la dissimilarité entre les taxons sur
 deux paramètres qui sont la date et la profondeur d’échantillonnage.
 
@@ -235,8 +238,9 @@ septembre), on peut voir au niveau de la répartition de la profondeur
 d’échantillonnage que l’échantillonnage au fond est bien à part comparé
 à l’échantillonnage à la surface et en médian. Ainsi, la population est
 différente également entre les niveaux de profondeur d’échantillonnage
-mais de façon moindre comparé aux populations entre les deux saisons. En
-hiver (mars), on peut voir que les populations sont similaires, même
+mais de façon moindre comparé aux populations entre les deux saisons
+(l’axe 2 traduisant moins de distribution de la population que l’axe 1).
+En hiver (mars), on peut voir que les populations sont similaires, même
 quand la profondeur d’échantillonnage est modifiée.
 
 On peut conclure qu’il n’y a pas de cohabitation entre les communautés
@@ -262,8 +266,9 @@ Cet histogramme représente les abondances des familles bactériennes
 d’échantillonnage.
 
 On peut constater que la famille de la Clade I prédomine dans les
-différentes conditions (dates et profondeurs d’échantillonnage). De
-plus, la famille des Cyanobiaceae sont aussi présentes en forte
+différentes conditions (dates et profondeurs d’échantillonnage) à
+l’exception de la profondeur d’échantillonnage en surface en septembre.
+En effet, la famille des Cyanobiaceae sont aussi présentes en forte
 abondance pour les profondeurs d’échantillonnage median et surface en
 septembre.
 
@@ -271,7 +276,9 @@ On peut en conclure que la profondeur d’échantillonnage et la saison
 influent sur la diversité, la structure et l’abondance bactérienne. En
 effet, l’abondance totale de la communauté bactérienne est à chaque fois
 moindre en période hivernale (mars) pour chaque profondeur
-d’échantillonnage.
+d’échantillonnage comparé à la période estivale (septembre). Ce résultat
+est logique puisque les communautés bactériennes ont une croissance
+favorisée à des températures estivales.
 
 ### Histogramme des abondances des genres bactériens
 
@@ -285,20 +292,26 @@ d’échantillonnage.
 Cet histogramme représente les abondances des genres bactériens (avec
 différentes couleurs) en fonction de la date et de la profondeur
 d’échantillonnage. Cela va permettre de préciser le type de biomarqueur
-qui pourra être utilisé.
+qui pourrait être utilisé.
 
 On peut constater que le genre Clade Ia prédomine dans toutes les
 conditions à l’exception de la profondeur d’échantillonnage en surface
-en septembre. De plus, à la profondeur d’échantillonnage en surface en
+en septembre. En effet, à la profondeur d’échantillonnage en surface en
 septembre, on peut constater que le genre Synechococcus CC9902 est le
-plus abondant parmi la communauté.
+plus abondant parmi la communauté. De plus, Synechococcus CC9902 est
+également présent à la profondeur d’échantillonnage médian en septembre.
 
 On peut en conclure comme précédemment que la saison et la profondeur
 d’échantillonnage influent sur la diversité, la structure et l’abondance
 bactérienne.
 
 Enfin, on peut dire que le genre Synechococcus CC9902 pourrait être
-utilisé comme biomarqueurs pour la saison estivale à des conditions de
+utilisé comme biomarqueur pour la saison estivale à des conditions de
 profondeurs d’échantillonnage en médian et en surface. On ne peut pas
 conclure sur l’utilisation d’un biomarqueur pour la période hivernale
 puisque aucun genre bactérien ne se démarque en cette période.
+
+Il aurait été intéressant d’obtenir des échantillons en mars à une
+profondeur d’échantillonnage en médian pour pouvoir comparer aux mieux
+les différentes conditions et observer leur impact sur la structure de
+la communauté planctonique.
